@@ -28,7 +28,7 @@ jobs:
             mv libsodium-1.0.18.tar.gz src/rbcl/libsodium.tar.gz
         - name: Install Python dependencies for build process.
           run: |
-            pip install .[build]
+            python -m build
             LIBSODIUM_MAKE_ARGS="-j$(nproc)"
 
         - name: Build wheels
