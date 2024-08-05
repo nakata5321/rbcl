@@ -3,8 +3,14 @@ on:
   push
 jobs:
   aarch64_wheels:
-    name: Build wheels for aarch64 linux
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python:
+          - {version: '3.10', abi: 'cp310'}
+          - {version: '3.11', abi: 'cp311'}
+          - {version: '3.12', abi: 'cp312'}
+    name: Python ${{ matrix.python.version }} with ABI ${{ matrix.python.abi }} for musllinux
 
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +23,7 @@ jobs:
       - name: Install Python.
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: ${{ matrix.python.version }}
           architecture: x64
       - name: Download libsodium source tree archive.
         run: |
@@ -26,9 +32,23 @@ jobs:
       - name: Install Python dependencies for build process.
         run: |
           pip install .[build]
+      - name: Build wheel file.
+        run: |
+          mkdir tmpwheelhouse
+          LIBSODIUM_MAKE_ARGS="-j$(nproc)" python -m build --wheel
+          mv dist/rbcl*.whl tmpwheelhouse
+          mkdir wheelhouse
+          mv tmpwheelhouse/rbcl*.whl wheelhouse/
+          cp build/lib*/rbcl/_sodium.py src/rbcl/_sodium.py
 
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
+      - name: Test wheel installation.
+        run: |
+          pip install -f wheelhouse --no-index --force-reinstall --no-dependencies rbcl
+
+      - name: Upload wheel file.
+        run: |
+          mkdir rbcl-wheelhouse
+          mv wheelhouse/rbcl*.whl rbcl-wheelhouse/
+      - uses: actions/upload-artifact@v3
         with:
-          name: dist-wheels
-          path: dist/*.whl
+          path: rbcl-wheelhouse/
