@@ -11,6 +11,8 @@ jobs:
           - {version: '3.11', abi: 'cp311'}
           - {version: '3.12', abi: 'cp312'}
     name: Python ${{ matrix.python.version }} with ABI ${{ matrix.python.abi }} for musllinux
+    env:
+      WHEELNAME: rbcl-${{ github.ref_name }}-${{ matrix.python.abi }}-
 
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +50,8 @@ jobs:
       - name: Upload wheel file.
         run: |
           mkdir rbcl-wheelhouse
-          mv wheelhouse/rbcl*.whl rbcl-wheelhouse/
+          mv wheelhouse/rbcl*.whl rbcl-wheelhouse/${{ env.WHEELNAME }}.whl
       - uses: actions/upload-artifact@v3
         with:
+          name: ${{ env.WHEELNAME }}
           path: rbcl-wheelhouse/
